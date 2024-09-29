@@ -10,11 +10,15 @@
         let theme = localStorage.getItem("meek_theme") || "light";
         document.documentElement.setAttribute("data-color-mode", theme);
     </script>
-<meta name="description" content="作者博客
-https://blog.meekdai.com/。">
+<meta name="description" content="### Gmeek作者博客
+[Gmeek作者博客](https://blog.meekdai.com)
+### Mrakdown语法的实现案例：
+[Mrakdown语法的实现案例](https://diyingisader.github.io/zang_diying.github.io/post/guan-yu-Gmeek%20-bo-ke-%20-%20-dai-ma-%E3%80%81-zhu-ye-she-zhi-de-meng-xin-jiao-cheng.html)。">
 <meta property="og:title" content="Gmeek博客指南">
-<meta property="og:description" content="作者博客
-https://blog.meekdai.com/。">
+<meta property="og:description" content="### Gmeek作者博客
+[Gmeek作者博客](https://blog.meekdai.com)
+### Mrakdown语法的实现案例：
+[Mrakdown语法的实现案例](https://diyingisader.github.io/zang_diying.github.io/post/guan-yu-Gmeek%20-bo-ke-%20-%20-dai-ma-%E3%80%81-zhu-ye-she-zhi-de-meng-xin-jiao-cheng.html)。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://ic1123.github.io/post/Gmeek-bo-ke-zhi-nan.html">
 <meta property="og:image" content="https://avatars.githubusercontent.com/u/89264167?u=2b839a9613f690b43f7f3fb63ba6b8e0d536f208&v=4">
@@ -75,8 +79,10 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 </div>
 </div>
     <div id="content">
-<div class="markdown-body" id="postBody"><p>作者博客<br>
-<a href="https://blog.meekdai.com/" rel="nofollow">https://blog.meekdai.com/</a></p></div>
+<div class="markdown-body" id="postBody"><h3>Gmeek作者博客</h3>
+<p><a href="https://blog.meekdai.com" rel="nofollow">Gmeek作者博客</a></p>
+<h3>Mrakdown语法的实现案例：</h3>
+<p><a href="https://diyingisader.github.io/zang_diying.github.io/post/guan-yu-Gmeek%20-bo-ke-%20-%20-dai-ma-%E3%80%81-zhu-ye-she-zhi-de-meng-xin-jiao-cheng.html" rel="nofollow">Mrakdown语法的实现案例</a></p></div>
 <div style="font-size:small;margin-top:8px;float:right;"></div>
 
 <button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
@@ -135,11 +141,7 @@ console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 
 <script>
 document.getElementById("pathHome").setAttribute("d",IconList["home"]);
 document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
-cmButton=document.getElementById("cmButton");
-    span=document.createElement("span");
-    span.setAttribute("class","Counter");
-    span.innerHTML="1";
-    cmButton.appendChild(span);
+
 
 
 function openComments(){
