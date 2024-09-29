@@ -1,1 +1,2 @@
-这是一条用于博客发布测试的信息。
+作者博客
+https://blog.meekdai.com/
