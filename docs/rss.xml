@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog</title><link>https://ic1123.github.io</link><description>仅作为个人学习输出</description><copyright>Blog</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://avatars.githubusercontent.com/u/89264167?u=2b839a9613f690b43f7f3fb63ba6b8e0d536f208&amp;v=4</url><title>avatar</title><link>https://ic1123.github.io</link></image><lastBuildDate>Sun, 29 Sep 2024 08:37:38 +0000</lastBuildDate><managingEditor>Blog</managingEditor><ttl>60</ttl><webMaster>Blog</webMaster><item><title>vps避免暴力扫描-Fail2ban安装</title><link>https://ic1123.github.io/post/vps-bi-mian-bao-li-sao-miao--Fail2ban-an-zhuang.html</link><description># vps避免暴力扫描-Fail2ban安装&#13;
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog</title><link>https://ic1123.github.io</link><description>仅作为个人学习输出</description><copyright>Blog</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://avatars.githubusercontent.com/u/89264167?u=2b839a9613f690b43f7f3fb63ba6b8e0d536f208&amp;v=4</url><title>avatar</title><link>https://ic1123.github.io</link></image><lastBuildDate>Sun, 29 Sep 2024 08:40:09 +0000</lastBuildDate><managingEditor>Blog</managingEditor><ttl>60</ttl><webMaster>Blog</webMaster><item><title>vps避免暴力扫描-Fail2ban安装</title><link>https://ic1123.github.io/post/vps-bi-mian-bao-li-sao-miao--Fail2ban-an-zhuang.html</link><description># vps避免暴力扫描-Fail2ban安装&#13;
 ----------------------------&#13;
 &#13;
 &gt; [!NOTE]&#13;
@@ -46,7 +46,6 @@ sudo systemctl enable fail2ban&#13;
 ### 相关博客作者&#13;
 [CJW](https://blog.freeblock.cn/)&#13;
 &#13;
-&gt; [!NOTE]&#13;
-&gt;相关视频&#13;
+### 相关视频&#13;
 &#13;
 `Gmeek-html&lt;iframe src='//player.bilibili.com/player.html?isOutside=true&amp;aid=1305790042&amp;bvid=BV1GM4m1m7ZD&amp;cid=1588230883&amp;p=1&amp;autoplay=0' scrolling='no' border='0' frameborder='no' framespacing='0' allowfullscreen='true' width='100%' height='460px'&gt;&lt;/iframe&gt;`。</description><guid isPermaLink="true">https://ic1123.github.io/post/Gmeek-bo-ke-zhi-nan.html</guid><pubDate>Sun, 29 Sep 2024 02:14:29 +0000</pubDate></item></channel></rss>
