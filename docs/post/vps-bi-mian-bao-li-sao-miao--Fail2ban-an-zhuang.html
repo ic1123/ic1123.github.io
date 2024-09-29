@@ -10,24 +10,24 @@
         let theme = localStorage.getItem("meek_theme") || "light";
         document.documentElement.setAttribute("data-color-mode", theme);
     </script>
-<meta name="description" content="vps避免暴力扫描-Fail2ban安装
+<meta name="description" content="# vps避免暴力扫描-Fail2ban安装
 ----------------------------
 
-# 一、fail2ban 的安装及部署方法
+## 一、fail2ban 的安装及部署方法
 
-## 步骤1. 更新软件源
+步骤1. 更新软件源
 
 ```
 sudo apt-get update
 ```
 
-## 步骤2. 安装fail2ban
+步骤2. 安装fail2ban
 
 ```
 sudo apt-get install -y fail2ban
 ```
 
-## 步骤3. 启动fail2ban服务并设置开机自启
+步骤3. 启动fail2ban服务并设置开机自启
 
 ```
 sudo systemctl start fail2ban
@@ -35,7 +35,7 @@ sudo systemctl start fail2ban
 sudo systemctl enable fail2ban
 ```
 
-## 步骤4. 配置 fail2ban jail 规则
+步骤4. 配置 fail2ban jail 规则
 
 用任意文本编辑器打开 `/etc/fail2ban/jail.local` 用以下内容替换原有配置：
 
@@ -43,26 +43,26 @@ sudo systemctl enable fail2ban
 
 **注: 如认为60秒内失败2次过于严格，可根据使用习惯将maxretry设置为稍大一点的数值，越小安全性越高**
 
-## 步骤5. 保存并关闭该文件。">
+步骤5. 保存并关闭该文件。">
 <meta property="og:title" content="vps避免暴力扫描-Fail2ban安装">
-<meta property="og:description" content="vps避免暴力扫描-Fail2ban安装
+<meta property="og:description" content="# vps避免暴力扫描-Fail2ban安装
 ----------------------------
 
-# 一、fail2ban 的安装及部署方法
+## 一、fail2ban 的安装及部署方法
 
-## 步骤1. 更新软件源
+步骤1. 更新软件源
 
 ```
 sudo apt-get update
 ```
 
-## 步骤2. 安装fail2ban
+步骤2. 安装fail2ban
 
 ```
 sudo apt-get install -y fail2ban
 ```
 
-## 步骤3. 启动fail2ban服务并设置开机自启
+步骤3. 启动fail2ban服务并设置开机自启
 
 ```
 sudo systemctl start fail2ban
@@ -70,7 +70,7 @@ sudo systemctl start fail2ban
 sudo systemctl enable fail2ban
 ```
 
-## 步骤4. 配置 fail2ban jail 规则
+步骤4. 配置 fail2ban jail 规则
 
 用任意文本编辑器打开 `/etc/fail2ban/jail.local` 用以下内容替换原有配置：
 
@@ -78,7 +78,7 @@ sudo systemctl enable fail2ban
 
 **注: 如认为60秒内失败2次过于严格，可根据使用习惯将maxretry设置为稍大一点的数值，越小安全性越高**
 
-## 步骤5. 保存并关闭该文件。">
+步骤5. 保存并关闭该文件。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://ic1123.github.io/post/vps-bi-mian-bao-li-sao-miao--Fail2ban-an-zhuang.html">
 <meta property="og:image" content="https://avatars.githubusercontent.com/u/89264167?u=2b839a9613f690b43f7f3fb63ba6b8e0d536f208&v=4">
@@ -149,28 +149,29 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 </div>
 </div>
     <div id="content">
-<div class="markdown-body" id="postBody"><h2>vps避免暴力扫描-Fail2ban安装</h2>
-<h1>一、fail2ban 的安装及部署方法</h1>
-<h2>步骤1. 更新软件源</h2>
+<div class="markdown-body" id="postBody"><h1>vps避免暴力扫描-Fail2ban安装</h1>
+<hr>
+<h2>一、fail2ban 的安装及部署方法</h2>
+<p>步骤1. 更新软件源</p>
 <pre class="notranslate"><code class="notranslate">sudo apt-get update
 </code></pre>
-<h2>步骤2. 安装fail2ban</h2>
+<p>步骤2. 安装fail2ban</p>
 <pre class="notranslate"><code class="notranslate">sudo apt-get install -y fail2ban
 </code></pre>
-<h2>步骤3. 启动fail2ban服务并设置开机自启</h2>
+<p>步骤3. 启动fail2ban服务并设置开机自启</p>
 <pre class="notranslate"><code class="notranslate">sudo systemctl start fail2ban
 
 sudo systemctl enable fail2ban
 </code></pre>
-<h2>步骤4. 配置 fail2ban jail 规则</h2>
+<p>步骤4. 配置 fail2ban jail 规则</p>
 <p>用任意文本编辑器打开 <code class="notranslate">/etc/fail2ban/jail.local</code> 用以下内容替换原有配置：</p>
 <p><img src="https://its.pku.edu.cn/img/faq_fail2ban-1.png"></p>
 <p><strong>注: 如认为60秒内失败2次过于严格，可根据使用习惯将maxretry设置为稍大一点的数值，越小安全性越高</strong></p>
-<h2>步骤5. 保存并关闭该文件。</h2>
+<p>步骤5. 保存并关闭该文件。</p>
 <p>使用以下命令重新启动fail2ban</p>
 <pre class="notranslate"><code class="notranslate">sudo systemctl restart fail2ban
 </code></pre>
-<h1>二、fail2ban的测试及关闭服务方法</h1>
+<h2>二、fail2ban的测试及关闭服务方法</h2>
 <p>查看当前封禁IP：</p>
 <pre class="notranslate"><code class="notranslate">sudo fail2ban-client status sshd
 </code></pre>
@@ -183,7 +184,7 @@ sudo systemctl enable fail2ban
 <p>关闭fail2ban服务：</p>
 <pre class="notranslate"><code class="notranslate">sudo systemctl disable fail2ban
 </code></pre>
-<h1>更多相关知识请参考</h1>
+<h2>三、更多相关知识请参考</h2>
 <p>仓库地址：<a href="https://github.com/fail2ban/fail2ban">https://github.com/fail2ban/fail2ban</a></p>
 <p>项目主页：<a href="https://www.fail2ban.org/wiki/index.php/Main_Page" rel="nofollow">https://www.fail2ban.org/wiki/index.php/Main_Page</a></p>
 <p>AWS博客介绍：<a href="https://aws.amazon.com/cn/blogs/china/open-source-tool-to-protect-ec2-instances-fail2ban" rel="nofollow">https://aws.amazon.com/cn/blogs/china/open-source-tool-to-protect-ec2-instances-fail2ban</a></p></div>
