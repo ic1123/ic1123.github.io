@@ -15,18 +15,16 @@
 
 > [!NOTE]
 > 文章来源：[北京大学](https://its.pku.edu.cn/faq_fail2ban.jsp)
-
-
-        对于校园网中近期发现的针对Linux系统的ssh暴力破解行为，可以通过安装fail2ban加强防护。">
+       
+ 对于校园网中近期发现的针对Linux系统的ssh暴力破解行为，可以通过安装fail2ban加强防护。">
 <meta property="og:title" content="vps避免暴力扫描-Fail2ban安装">
 <meta property="og:description" content="# vps避免暴力扫描-Fail2ban安装
 ----------------------------
 
 > [!NOTE]
 > 文章来源：[北京大学](https://its.pku.edu.cn/faq_fail2ban.jsp)
-
-
-        对于校园网中近期发现的针对Linux系统的ssh暴力破解行为，可以通过安装fail2ban加强防护。">
+       
+ 对于校园网中近期发现的针对Linux系统的ssh暴力破解行为，可以通过安装fail2ban加强防护。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://ic1123.github.io/post/vps-bi-mian-bao-li-sao-miao--Fail2ban-an-zhuang.html">
 <meta property="og:image" content="https://avatars.githubusercontent.com/u/89264167?u=2b839a9613f690b43f7f3fb63ba6b8e0d536f208&v=4">
@@ -101,10 +99,8 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <hr>
 <div class="markdown-alert markdown-alert-note"><p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p><p>文章来源：<a href="https://its.pku.edu.cn/faq_fail2ban.jsp" rel="nofollow">北京大学</a></p>
 </div>
-<pre class="notranslate"><code class="notranslate">    对于校园网中近期发现的针对Linux系统的ssh暴力破解行为，可以通过安装fail2ban加强防护。 fail2ban是一款入侵防御软件，能够运行在大多数Linux服务器上，保护计算机服务器免受暴力破解的攻击。fail2ban启动后会通过检测系统行为日志识别暴力破解行为，对于在短时间内多次未能通过身份验证的请求，fail2ban会自动调用系统自带的防火墙或包管理框架（如iptables或tcp wrapper等）进行封禁。
-
-    在安装fail2ban之前，建议将ssh服务配置为**通过密钥登录并禁止密码登录**。这样既可以增强安全性，也可以避免fail2ban启动后因忘记密码或输错密码导致正常登录被封禁。
-</code></pre>
+<p>对于校园网中近期发现的针对Linux系统的ssh暴力破解行为，可以通过安装fail2ban加强防护。 fail2ban是一款入侵防御软件，能够运行在大多数Linux服务器上，保护计算机服务器免受暴力破解的攻击。fail2ban启动后会通过检测系统行为日志识别暴力破解行为，对于在短时间内多次未能通过身份验证的请求，fail2ban会自动调用系统自带的防火墙或包管理框架（如iptables或tcp wrapper等）进行封禁。</p>
+<p>在安装fail2ban之前，建议将ssh服务配置为<strong>通过密钥登录并禁止密码登录</strong>。这样既可以增强安全性，也可以避免fail2ban启动后因忘记密码或输错密码导致正常登录被封禁。</p>
 <h2>一、fail2ban 的安装及部署方法</h2>
 <p>步骤1. 更新软件源</p>
 <pre class="notranslate"><code class="notranslate">sudo apt-get update
