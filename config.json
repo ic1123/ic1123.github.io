@@ -4,6 +4,6 @@
     "avatarUrl": "https://avatars.githubusercontent.com/u/89264167?u=2b839a9613f690b43f7f3fb63ba6b8e0d536f208&v=4",
     "GMEEK_VERSION": "last",
     "startSite": "09/29/2024",
-    "allHead":"<script src='https://ic1123.github.io/Gmeek/plugins/GmeekVercount.js'></script>"
-    "script":"<script src='https://ic1123.github.io/Gmeek/plugins/GmeekTOC.js'></script>",
+    "allHead":"<script src='https://blog.meekdai.com/Gmeek/plugins/GmeekVercount.js'></script>",
+    "script":"<script src='https://blog.meekdai.com/Gmeek/plugins/GmeekTOC.js'></script>"
 }
