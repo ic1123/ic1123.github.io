@@ -26,7 +26,9 @@ sudo systemctl enable fail2ban
 ## 步骤4. 配置 fail2ban jail 规则
 
 用任意文本编辑器打开 `/etc/fail2ban/jail.local` 用以下内容替换原有配置：
-https://its.pku.edu.cn/img/faq_fail2ban-1.png
+
+`Gmeek-html<img src="https://its.pku.edu.cn/img/faq_fail2ban-1.png">`
+
 **注: 如认为60秒内失败2次过于严格，可根据使用习惯将maxretry设置为稍大一点的数值，越小安全性越高**
 
 ## 步骤5. 保存并关闭该文件。
