@@ -1,6 +1,11 @@
 # vps避免暴力扫描-Fail2ban安装
 ----------------------------
 
+> [!NOTE]
+> 文章来源：[北京大学](https://its.pku.edu.cn/faq_fail2ban.jsp)
+
+
+
 ## 一、fail2ban 的安装及部署方法
 
 步骤1. 更新软件源
