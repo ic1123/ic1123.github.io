@@ -110,4 +110,5 @@ chmod +x Serv00-Renew.sh
 选`Hourly`
 command： 
 ```
-sh ~/domains/Serv00-Renew.sh```
+sh ~/domains/Serv00-Renew.sh
+```
