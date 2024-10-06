@@ -1,0 +1,1727 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark" data-light-theme="light" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://avatars.githubusercontent.com/u/89264167?u=2b839a9613f690b43f7f3fb63ba6b8e0d536f208&v=4"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="> [!NOTE]
+> 文章来源：[XJFKKK](https://linux.do/t/topic/181957)
+
+### 一、创建worker
+将下面代码复制进worker
+```
+addEventListener('fetch', event => {
+  event.respondWith(handleRequest(event.request))
+})
+
+addEventListener('scheduled', event => {
+  event.waitUntil(handleScheduled(event.scheduledTime))
+})
+
+async function handleRequest(request) {
+  const url = new URL(request.url)
+  
+  if (url.pathname === '/login' && request.method === 'POST') {
+    const formData = await request.formData()
+    const password = formData.get('password')
+    
+    if (password === PASSWORD) {
+      const response = new Response(JSON.stringify({ success: true }), {
+        headers: { 'Content-Type': 'application/json' }
+      })
+      response.headers.set('Set-Cookie', `auth=${PASSWORD}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=86400`)
+      return response
+    } else {
+      return new Response(JSON.stringify({ success: false }), {
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+  } else if (url.pathname === '/run' && request.method === 'POST') {
+    if (!isAuthenticated(request)) {
+      return new Response('Unauthorized', { status: 401 })
+    }
+    
+    await handleScheduled(new Date().toISOString())
+    const results = await CRON_RESULTS.get('lastResults', 'json')
+    return new Response(JSON.stringify(results), {
+      headers: { 'Content-Type': 'application/json' }
+    })
+  } else if (url.pathname === '/results' && request.method === 'GET') {
+    if (!isAuthenticated(request)) {
+      return new Response(JSON.stringify({ authenticated: false }), {
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+    const results = await CRON_RESULTS.get('lastResults', 'json')
+    return new Response(JSON.stringify({ authenticated: true, results: results || [] }), {
+      headers: { 'Content-Type': 'application/json' }
+    })
+  } else if (url.pathname === '/check-auth' && request.method === 'GET') {
+    return new Response(JSON.stringify({ authenticated: isAuthenticated(request) }), {
+      headers: { 'Content-Type': 'application/json' }
+    })
+  } else {
+    // 显示登录页面或结果页面的 HTML
+    return new Response(getHtmlContent(), {
+      headers: { 'Content-Type': 'text/html' },
+    })
+  }
+}
+
+function isAuthenticated(request) {
+  const cookies = request.headers.get('Cookie')
+  if (cookies) {
+    const authCookie = cookies.split(';').find(c => c.trim().startsWith('auth='))
+    if (authCookie) {
+      const authValue = authCookie.split('=')[1]
+      return authValue === PASSWORD
+    }
+  }
+  return false
+}
+
+function getHtmlContent() {
+  return `
+  <!DOCTYPE html>
+  <html lang='en'>
+  <head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Worker Control Panel</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        background-color: #f0f0f0;
+      }
+      .container {
+        text-align: center;
+        padding: 20px;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        max-width: 800px;
+        width: 100%;
+      }
+      input, button {
+        margin: 10px 0;
+        padding: 10px;
+        width: 200px;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+      }
+      button {
+        background-color: #4CAF50;
+        border: none;
+        color: white;
+        cursor: pointer;
+      }
+      #status {
+        margin-top: 20px;
+        font-weight: bold;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+      th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+      }
+      th {
+        background-color: #f2f2f2;
+      }
+      #loginForm, #dashboard {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class='container'>
+      <h1>Worker Control Panel</h1>
+      <div id='loginForm'>
+        <input type='password' id='password' placeholder='Enter password'>
+        <button onclick='login()'>Login</button>
+      </div>
+      <div id='dashboard'>
+        <button onclick='runScript()'>Run Script</button>
+        <div id='status'></div>
+        <table id='resultsTable'>
+          <thead>
+            <tr>
+              <th>Account</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Message</th>
+              <th>Last Run</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <script>
+      let password = '';
+
+      function showLoginForm() {
+        document.getElementById('loginForm').style.display = 'block';
+        document.getElementById('dashboard').style.display = 'none';
+      }
+
+      function showDashboard() {
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        fetchResults();
+      }
+
+      async function checkAuth() {
+        const response = await fetch('/check-auth');
+        const data = await response.json();
+        if (data.authenticated) {
+          showDashboard();
+        } else {
+          showLoginForm();
+        }
+      }
+
+      async function login() {
+        password = document.getElementById('password').value;
+        const formData = new FormData();
+        formData.append('password', password);
+        const response = await fetch('/login', { 
+          method: 'POST',
+          body: formData
+        });
+        const result = await response.json();
+        if (result.success) {
+          showDashboard();
+        } else {
+          alert('Incorrect password');
+        }
+      }
+
+      async function runScript() {
+        const statusDiv = document.getElementById('status');
+        statusDiv.textContent = 'Executing script...';
+        try {
+          const response = await fetch('/run', { method: 'POST' });
+          if (response.ok) {
+            const results = await response.json();
+            displayResults(results);
+            statusDiv.textContent = 'Script executed successfully!';
+          } else if (response.status === 401) {
+            statusDiv.textContent = 'Unauthorized. Please login again.';
+            showLoginForm();
+          } else {
+            statusDiv.textContent = 'Error executing script.';
+          }
+        } catch (error) {
+          statusDiv.textContent = 'Error: ' + error.message;
+        }
+      }
+
+      async function fetchResults() {
+        try {
+          const response = await fetch('/results');
+          if (response.ok) {
+            const data = await response.json();
+            if (data.authenticated) {
+              displayResults(data.results);
+            } else {
+              showLoginForm();
+            }
+          } else {
+            console.error('Failed to fetch results');
+            showLoginForm();
+          }
+        } catch (error) {
+          console.error('Error fetching results:', error);
+          showLoginForm();
+        }
+      }
+
+      function displayResults(results) {
+        const tbody = document.querySelector('#resultsTable tbody');
+        tbody.innerHTML = '';
+        results.forEach(result => {
+          result.cronResults.forEach((cronResult, index) => {
+            const row = tbody.insertRow();
+            if (index === 0) {
+              row.insertCell(0).textContent = result.username;
+              row.insertCell(1).textContent = result.type;
+            } else {
+              row.insertCell(0).textContent = '';
+              row.insertCell(1).textContent = '';
+            }
+            row.insertCell(2).textContent = cronResult.success ? 'Success' : 'Failed';
+            row.insertCell(3).textContent = cronResult.message;
+            row.insertCell(4).textContent = new Date(result.lastRun).toLocaleString();
+          });
+        });
+      }
+
+      // 页面加载时检查认证状态
+      document.addEventListener('DOMContentLoaded', checkAuth);
+    </script>
+  </body>
+  </html>
+  `;
+}
+
+async function handleScheduled(scheduledTime) {
+  const accountsData = JSON.parse(ACCOUNTS_JSON);
+  const accounts = accountsData.accounts;
+  
+  let results = [];
+  for (const account of accounts) {
+    const result = await loginAccount(account);
+    results.push(result);
+    await delay(Math.floor(Math.random() * 8000) + 1000);
+  }
+
+  // 保存结果到 KV 存储
+  await CRON_RESULTS.put('lastResults', JSON.stringify(results));
+}
+
+function generateRandomUserAgent() {
+  const browsers = ['Chrome', 'Firefox', 'Safari', 'Edge', 'Opera'];
+  const browser = browsers[Math.floor(Math.random() * browsers.length)];
+  const version = Math.floor(Math.random() * 100) + 1;
+  const os = ['Windows NT 10.0', 'Macintosh', 'X11'];
+  const selectedOS = os[Math.floor(Math.random() * os.length)];
+  const osVersion = selectedOS === 'X11' ? 'Linux x86_64' : selectedOS === 'Macintosh' ? 'Intel Mac OS X 10_15_7' : 'Win64; x64';
+
+  return `Mozilla/5.0 (${selectedOS}; ${osVersion}) AppleWebKit/537.36 (KHTML, like Gecko) ${browser}/${version}.0.0.0 Safari/537.36`;
+}
+
+async function loginAccount(account) {
+  const { username, password, panelnum, type, cronCommands } = account
+  let baseUrl = type === 'ct8' 
+    ? 'https://panel.ct8.pl' 
+    : `https://panel${panelnum}.serv00.com`
+  let loginUrl = `${baseUrl}/login/?next=/cron/`
+
+  const userAgent = generateRandomUserAgent();
+
+  try {
+    const response = await fetch(loginUrl, {
+      method: 'GET',
+      headers: {
+        'User-Agent': userAgent,
+      },
+    })
+
+    const pageContent = await response.text()
+    const csrfMatch = pageContent.match(/name='csrfmiddlewaretoken' value='([^']*)'/)
+    const csrfToken = csrfMatch ? csrfMatch[1] : null
+
+    if (!csrfToken) {
+      throw new Error('CSRF token not found')
+    }
+
+    const initialCookies = response.headers.get('set-cookie') || ''
+
+    const formData = new URLSearchParams({
+      'username': username,
+      'password': password,
+      'csrfmiddlewaretoken': csrfToken,
+      'next': '/cron/'
+    })
+
+    const loginResponse = await fetch(loginUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Referer': loginUrl,
+        'User-Agent': userAgent,
+        'Cookie': initialCookies,
+      },
+      body: formData.toString(),
+      redirect: 'manual'
+    })
+
+    if (loginResponse.status === 302 && loginResponse.headers.get('location') === '/cron/') {
+      const loginCookies = loginResponse.headers.get('set-cookie') || ''
+      const allCookies = combineCookies(initialCookies, loginCookies)
+
+      // 访问 cron 列表页面
+      const cronListUrl = `${baseUrl}/cron/`
+      const cronListResponse = await fetch(cronListUrl, {
+        headers: {
+          'Cookie': allCookies,
+          'User-Agent': userAgent,
+        }
+      })
+      const cronListContent = await cronListResponse.text()
+
+      console.log(`Cron list URL: ${cronListUrl}`)
+      console.log(`Cron list response status: ${cronListResponse.status}`)
+      console.log(`Cron list content (first 1000 chars): ${cronListContent.substring(0, 1000)}`)
+
+      let cronResults = [];
+      for (const cronCommand of cronCommands) {
+        if (!cronListContent.includes(cronCommand)) {
+          // 访问添加 cron 任务页面
+          const addCronUrl = `${baseUrl}/cron/add`
+          const addCronPageResponse = await fetch(addCronUrl, {
+            headers: {
+              'Cookie': allCookies,
+              'User-Agent': userAgent,
+              'Referer': cronListUrl,
+            }
+          })
+          const addCronPageContent = await addCronPageResponse.text()
+
+          console.log(`Add cron page URL: ${addCronUrl}`)
+          console.log(`Add cron page response status: ${addCronPageResponse.status}`)
+          console.log(`Add cron page content (first 1000 chars): ${addCronPageContent.substring(0, 1000)}`)
+
+          const newCsrfMatch = addCronPageContent.match(/name='csrfmiddlewaretoken' value='([^']*)'/)
+          const newCsrfToken = newCsrfMatch ? newCsrfMatch[1] : null
+
+          if (!newCsrfToken) {
+            throw new Error('New CSRF token not found for adding cron task')
+          }
+
+          const formData = new URLSearchParams({
+            'csrfmiddlewaretoken': newCsrfToken,
+            'spec': 'manual',
+            'minute_time_interval': 'on',
+            'minute': '15',
+            'hour_time_interval': 'each',
+            'hour': '*',
+            'day_time_interval': 'each',
+            'day': '*',
+            'month_time_interval': 'each',
+            'month': '*',
+            'dow_time_interval': 'each',
+            'dow': '*',
+            'command': cronCommand,
+            'comment': 'Auto added cron job'
+          })
+
+          console.log('Form data being sent:', formData.toString())
+
+          const { success, response: addCronResponse, content: addCronResponseContent } = await addCronWithRetry(addCronUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'Cookie': allCookies,
+              'User-Agent': userAgent,
+              'Referer': addCronUrl,
+              'Origin': baseUrl,
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+              'Accept-Language': 'en-US,en;q=0.5',
+              'Upgrade-Insecure-Requests': '1'
+            },
+            body: formData.toString(),
+          })
+
+          console.log('Full response content:', addCronResponseContent)
+
+          if (success) {
+            if (addCronResponseContent.includes('Cron job has been added') || addCronResponseContent.includes('Zadanie cron zostało dodane')) {
+              const message = `添加了新的 cron 任务：${cronCommand}`;
+              console.log(message);
+              await sendTelegramMessage(`账号 ${username} (${type}) ${message}`);
+              cronResults.push({ success: true, message });
+            } else {
+              // 如果响应中没有成功信息，再次检查cron列表
+              const checkCronListResponse = await fetch(cronListUrl, {
+                headers: {
+                  'Cookie': allCookies,
+                  'User-Agent': userAgent,
+                }
+              });
+              const checkCronListContent = await checkCronListResponse.text();
+              
+              if (checkCronListContent.includes(cronCommand)) {
+                const message = `确认添加了新的 cron 任务：${cronCommand}`;
+                console.log(message);
+                await sendTelegramMessage(`账号 ${username} (${type}) ${message}`);
+                cronResults.push({ success: true, message });
+              } else {
+                const message = `尝试添加 cron 任务：${cronCommand}，但在列表中未找到。">
+<meta property="og:title" content="Serv00利用Cloudflare保活项目接入通知">
+<meta property="og:description" content="> [!NOTE]
+> 文章来源：[XJFKKK](https://linux.do/t/topic/181957)
+
+### 一、创建worker
+将下面代码复制进worker
+```
+addEventListener('fetch', event => {
+  event.respondWith(handleRequest(event.request))
+})
+
+addEventListener('scheduled', event => {
+  event.waitUntil(handleScheduled(event.scheduledTime))
+})
+
+async function handleRequest(request) {
+  const url = new URL(request.url)
+  
+  if (url.pathname === '/login' && request.method === 'POST') {
+    const formData = await request.formData()
+    const password = formData.get('password')
+    
+    if (password === PASSWORD) {
+      const response = new Response(JSON.stringify({ success: true }), {
+        headers: { 'Content-Type': 'application/json' }
+      })
+      response.headers.set('Set-Cookie', `auth=${PASSWORD}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=86400`)
+      return response
+    } else {
+      return new Response(JSON.stringify({ success: false }), {
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+  } else if (url.pathname === '/run' && request.method === 'POST') {
+    if (!isAuthenticated(request)) {
+      return new Response('Unauthorized', { status: 401 })
+    }
+    
+    await handleScheduled(new Date().toISOString())
+    const results = await CRON_RESULTS.get('lastResults', 'json')
+    return new Response(JSON.stringify(results), {
+      headers: { 'Content-Type': 'application/json' }
+    })
+  } else if (url.pathname === '/results' && request.method === 'GET') {
+    if (!isAuthenticated(request)) {
+      return new Response(JSON.stringify({ authenticated: false }), {
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+    const results = await CRON_RESULTS.get('lastResults', 'json')
+    return new Response(JSON.stringify({ authenticated: true, results: results || [] }), {
+      headers: { 'Content-Type': 'application/json' }
+    })
+  } else if (url.pathname === '/check-auth' && request.method === 'GET') {
+    return new Response(JSON.stringify({ authenticated: isAuthenticated(request) }), {
+      headers: { 'Content-Type': 'application/json' }
+    })
+  } else {
+    // 显示登录页面或结果页面的 HTML
+    return new Response(getHtmlContent(), {
+      headers: { 'Content-Type': 'text/html' },
+    })
+  }
+}
+
+function isAuthenticated(request) {
+  const cookies = request.headers.get('Cookie')
+  if (cookies) {
+    const authCookie = cookies.split(';').find(c => c.trim().startsWith('auth='))
+    if (authCookie) {
+      const authValue = authCookie.split('=')[1]
+      return authValue === PASSWORD
+    }
+  }
+  return false
+}
+
+function getHtmlContent() {
+  return `
+  <!DOCTYPE html>
+  <html lang='en'>
+  <head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Worker Control Panel</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        background-color: #f0f0f0;
+      }
+      .container {
+        text-align: center;
+        padding: 20px;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        max-width: 800px;
+        width: 100%;
+      }
+      input, button {
+        margin: 10px 0;
+        padding: 10px;
+        width: 200px;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+      }
+      button {
+        background-color: #4CAF50;
+        border: none;
+        color: white;
+        cursor: pointer;
+      }
+      #status {
+        margin-top: 20px;
+        font-weight: bold;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+      th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+      }
+      th {
+        background-color: #f2f2f2;
+      }
+      #loginForm, #dashboard {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class='container'>
+      <h1>Worker Control Panel</h1>
+      <div id='loginForm'>
+        <input type='password' id='password' placeholder='Enter password'>
+        <button onclick='login()'>Login</button>
+      </div>
+      <div id='dashboard'>
+        <button onclick='runScript()'>Run Script</button>
+        <div id='status'></div>
+        <table id='resultsTable'>
+          <thead>
+            <tr>
+              <th>Account</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Message</th>
+              <th>Last Run</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <script>
+      let password = '';
+
+      function showLoginForm() {
+        document.getElementById('loginForm').style.display = 'block';
+        document.getElementById('dashboard').style.display = 'none';
+      }
+
+      function showDashboard() {
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        fetchResults();
+      }
+
+      async function checkAuth() {
+        const response = await fetch('/check-auth');
+        const data = await response.json();
+        if (data.authenticated) {
+          showDashboard();
+        } else {
+          showLoginForm();
+        }
+      }
+
+      async function login() {
+        password = document.getElementById('password').value;
+        const formData = new FormData();
+        formData.append('password', password);
+        const response = await fetch('/login', { 
+          method: 'POST',
+          body: formData
+        });
+        const result = await response.json();
+        if (result.success) {
+          showDashboard();
+        } else {
+          alert('Incorrect password');
+        }
+      }
+
+      async function runScript() {
+        const statusDiv = document.getElementById('status');
+        statusDiv.textContent = 'Executing script...';
+        try {
+          const response = await fetch('/run', { method: 'POST' });
+          if (response.ok) {
+            const results = await response.json();
+            displayResults(results);
+            statusDiv.textContent = 'Script executed successfully!';
+          } else if (response.status === 401) {
+            statusDiv.textContent = 'Unauthorized. Please login again.';
+            showLoginForm();
+          } else {
+            statusDiv.textContent = 'Error executing script.';
+          }
+        } catch (error) {
+          statusDiv.textContent = 'Error: ' + error.message;
+        }
+      }
+
+      async function fetchResults() {
+        try {
+          const response = await fetch('/results');
+          if (response.ok) {
+            const data = await response.json();
+            if (data.authenticated) {
+              displayResults(data.results);
+            } else {
+              showLoginForm();
+            }
+          } else {
+            console.error('Failed to fetch results');
+            showLoginForm();
+          }
+        } catch (error) {
+          console.error('Error fetching results:', error);
+          showLoginForm();
+        }
+      }
+
+      function displayResults(results) {
+        const tbody = document.querySelector('#resultsTable tbody');
+        tbody.innerHTML = '';
+        results.forEach(result => {
+          result.cronResults.forEach((cronResult, index) => {
+            const row = tbody.insertRow();
+            if (index === 0) {
+              row.insertCell(0).textContent = result.username;
+              row.insertCell(1).textContent = result.type;
+            } else {
+              row.insertCell(0).textContent = '';
+              row.insertCell(1).textContent = '';
+            }
+            row.insertCell(2).textContent = cronResult.success ? 'Success' : 'Failed';
+            row.insertCell(3).textContent = cronResult.message;
+            row.insertCell(4).textContent = new Date(result.lastRun).toLocaleString();
+          });
+        });
+      }
+
+      // 页面加载时检查认证状态
+      document.addEventListener('DOMContentLoaded', checkAuth);
+    </script>
+  </body>
+  </html>
+  `;
+}
+
+async function handleScheduled(scheduledTime) {
+  const accountsData = JSON.parse(ACCOUNTS_JSON);
+  const accounts = accountsData.accounts;
+  
+  let results = [];
+  for (const account of accounts) {
+    const result = await loginAccount(account);
+    results.push(result);
+    await delay(Math.floor(Math.random() * 8000) + 1000);
+  }
+
+  // 保存结果到 KV 存储
+  await CRON_RESULTS.put('lastResults', JSON.stringify(results));
+}
+
+function generateRandomUserAgent() {
+  const browsers = ['Chrome', 'Firefox', 'Safari', 'Edge', 'Opera'];
+  const browser = browsers[Math.floor(Math.random() * browsers.length)];
+  const version = Math.floor(Math.random() * 100) + 1;
+  const os = ['Windows NT 10.0', 'Macintosh', 'X11'];
+  const selectedOS = os[Math.floor(Math.random() * os.length)];
+  const osVersion = selectedOS === 'X11' ? 'Linux x86_64' : selectedOS === 'Macintosh' ? 'Intel Mac OS X 10_15_7' : 'Win64; x64';
+
+  return `Mozilla/5.0 (${selectedOS}; ${osVersion}) AppleWebKit/537.36 (KHTML, like Gecko) ${browser}/${version}.0.0.0 Safari/537.36`;
+}
+
+async function loginAccount(account) {
+  const { username, password, panelnum, type, cronCommands } = account
+  let baseUrl = type === 'ct8' 
+    ? 'https://panel.ct8.pl' 
+    : `https://panel${panelnum}.serv00.com`
+  let loginUrl = `${baseUrl}/login/?next=/cron/`
+
+  const userAgent = generateRandomUserAgent();
+
+  try {
+    const response = await fetch(loginUrl, {
+      method: 'GET',
+      headers: {
+        'User-Agent': userAgent,
+      },
+    })
+
+    const pageContent = await response.text()
+    const csrfMatch = pageContent.match(/name='csrfmiddlewaretoken' value='([^']*)'/)
+    const csrfToken = csrfMatch ? csrfMatch[1] : null
+
+    if (!csrfToken) {
+      throw new Error('CSRF token not found')
+    }
+
+    const initialCookies = response.headers.get('set-cookie') || ''
+
+    const formData = new URLSearchParams({
+      'username': username,
+      'password': password,
+      'csrfmiddlewaretoken': csrfToken,
+      'next': '/cron/'
+    })
+
+    const loginResponse = await fetch(loginUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Referer': loginUrl,
+        'User-Agent': userAgent,
+        'Cookie': initialCookies,
+      },
+      body: formData.toString(),
+      redirect: 'manual'
+    })
+
+    if (loginResponse.status === 302 && loginResponse.headers.get('location') === '/cron/') {
+      const loginCookies = loginResponse.headers.get('set-cookie') || ''
+      const allCookies = combineCookies(initialCookies, loginCookies)
+
+      // 访问 cron 列表页面
+      const cronListUrl = `${baseUrl}/cron/`
+      const cronListResponse = await fetch(cronListUrl, {
+        headers: {
+          'Cookie': allCookies,
+          'User-Agent': userAgent,
+        }
+      })
+      const cronListContent = await cronListResponse.text()
+
+      console.log(`Cron list URL: ${cronListUrl}`)
+      console.log(`Cron list response status: ${cronListResponse.status}`)
+      console.log(`Cron list content (first 1000 chars): ${cronListContent.substring(0, 1000)}`)
+
+      let cronResults = [];
+      for (const cronCommand of cronCommands) {
+        if (!cronListContent.includes(cronCommand)) {
+          // 访问添加 cron 任务页面
+          const addCronUrl = `${baseUrl}/cron/add`
+          const addCronPageResponse = await fetch(addCronUrl, {
+            headers: {
+              'Cookie': allCookies,
+              'User-Agent': userAgent,
+              'Referer': cronListUrl,
+            }
+          })
+          const addCronPageContent = await addCronPageResponse.text()
+
+          console.log(`Add cron page URL: ${addCronUrl}`)
+          console.log(`Add cron page response status: ${addCronPageResponse.status}`)
+          console.log(`Add cron page content (first 1000 chars): ${addCronPageContent.substring(0, 1000)}`)
+
+          const newCsrfMatch = addCronPageContent.match(/name='csrfmiddlewaretoken' value='([^']*)'/)
+          const newCsrfToken = newCsrfMatch ? newCsrfMatch[1] : null
+
+          if (!newCsrfToken) {
+            throw new Error('New CSRF token not found for adding cron task')
+          }
+
+          const formData = new URLSearchParams({
+            'csrfmiddlewaretoken': newCsrfToken,
+            'spec': 'manual',
+            'minute_time_interval': 'on',
+            'minute': '15',
+            'hour_time_interval': 'each',
+            'hour': '*',
+            'day_time_interval': 'each',
+            'day': '*',
+            'month_time_interval': 'each',
+            'month': '*',
+            'dow_time_interval': 'each',
+            'dow': '*',
+            'command': cronCommand,
+            'comment': 'Auto added cron job'
+          })
+
+          console.log('Form data being sent:', formData.toString())
+
+          const { success, response: addCronResponse, content: addCronResponseContent } = await addCronWithRetry(addCronUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'Cookie': allCookies,
+              'User-Agent': userAgent,
+              'Referer': addCronUrl,
+              'Origin': baseUrl,
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+              'Accept-Language': 'en-US,en;q=0.5',
+              'Upgrade-Insecure-Requests': '1'
+            },
+            body: formData.toString(),
+          })
+
+          console.log('Full response content:', addCronResponseContent)
+
+          if (success) {
+            if (addCronResponseContent.includes('Cron job has been added') || addCronResponseContent.includes('Zadanie cron zostało dodane')) {
+              const message = `添加了新的 cron 任务：${cronCommand}`;
+              console.log(message);
+              await sendTelegramMessage(`账号 ${username} (${type}) ${message}`);
+              cronResults.push({ success: true, message });
+            } else {
+              // 如果响应中没有成功信息，再次检查cron列表
+              const checkCronListResponse = await fetch(cronListUrl, {
+                headers: {
+                  'Cookie': allCookies,
+                  'User-Agent': userAgent,
+                }
+              });
+              const checkCronListContent = await checkCronListResponse.text();
+              
+              if (checkCronListContent.includes(cronCommand)) {
+                const message = `确认添加了新的 cron 任务：${cronCommand}`;
+                console.log(message);
+                await sendTelegramMessage(`账号 ${username} (${type}) ${message}`);
+                cronResults.push({ success: true, message });
+              } else {
+                const message = `尝试添加 cron 任务：${cronCommand}，但在列表中未找到。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ic1123.github.io/post/Serv00-li-yong-Cloudflare-bao-huo-xiang-mu-jie-ru-tong-zhi.html">
+<meta property="og:image" content="https://avatars.githubusercontent.com/u/89264167?u=2b839a9613f690b43f7f3fb63ba6b8e0d536f208&v=4">
+<title>Serv00利用Cloudflare保活项目接入通知</title>
+
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+</style>
+<style>.markdown-alert{padding:0.5rem 1rem;margin-bottom:1rem;border-left:.25em solid var(--borderColor-default,var(--color-border-default));}.markdown-alert .markdown-alert-title {display:flex;font-weight:var(--base-text-weight-medium,500);align-items:center;line-height:1;}.markdown-alert>:first-child {margin-top:0;}.markdown-alert>:last-child {margin-bottom:0;}</style><style>.markdown-alert.markdown-alert-note {border-left-color:var(--borderColor-accent-emphasis, var(--color-accent-emphasis));background-color:var(--color-accent-subtle);}.markdown-alert.markdown-alert-note .markdown-alert-title {color: var(--fgColor-accent,var(--color-accent-fg));}</style>
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">Serv00利用Cloudflare保活项目接入通知</h1>
+<div class="title-right">
+    <a href="https://ic1123.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/ic1123/ic1123.github.io/issues/5" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><div class="markdown-alert markdown-alert-note"><p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p><p>文章来源：<a href="https://linux.do/t/topic/181957" rel="nofollow">XJFKKK</a></p>
+</div>
+<h3>一、创建worker</h3>
+<p>将下面代码复制进worker</p>
+<pre class="notranslate"><code class="notranslate">addEventListener('fetch', event =&gt; {
+  event.respondWith(handleRequest(event.request))
+})
+
+addEventListener('scheduled', event =&gt; {
+  event.waitUntil(handleScheduled(event.scheduledTime))
+})
+
+async function handleRequest(request) {
+  const url = new URL(request.url)
+  
+  if (url.pathname === '/login' &amp;&amp; request.method === 'POST') {
+    const formData = await request.formData()
+    const password = formData.get('password')
+    
+    if (password === PASSWORD) {
+      const response = new Response(JSON.stringify({ success: true }), {
+        headers: { 'Content-Type': 'application/json' }
+      })
+      response.headers.set('Set-Cookie', `auth=${PASSWORD}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=86400`)
+      return response
+    } else {
+      return new Response(JSON.stringify({ success: false }), {
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+  } else if (url.pathname === '/run' &amp;&amp; request.method === 'POST') {
+    if (!isAuthenticated(request)) {
+      return new Response('Unauthorized', { status: 401 })
+    }
+    
+    await handleScheduled(new Date().toISOString())
+    const results = await CRON_RESULTS.get('lastResults', 'json')
+    return new Response(JSON.stringify(results), {
+      headers: { 'Content-Type': 'application/json' }
+    })
+  } else if (url.pathname === '/results' &amp;&amp; request.method === 'GET') {
+    if (!isAuthenticated(request)) {
+      return new Response(JSON.stringify({ authenticated: false }), {
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+    const results = await CRON_RESULTS.get('lastResults', 'json')
+    return new Response(JSON.stringify({ authenticated: true, results: results || [] }), {
+      headers: { 'Content-Type': 'application/json' }
+    })
+  } else if (url.pathname === '/check-auth' &amp;&amp; request.method === 'GET') {
+    return new Response(JSON.stringify({ authenticated: isAuthenticated(request) }), {
+      headers: { 'Content-Type': 'application/json' }
+    })
+  } else {
+    // 显示登录页面或结果页面的 HTML
+    return new Response(getHtmlContent(), {
+      headers: { 'Content-Type': 'text/html' },
+    })
+  }
+}
+
+function isAuthenticated(request) {
+  const cookies = request.headers.get('Cookie')
+  if (cookies) {
+    const authCookie = cookies.split(';').find(c =&gt; c.trim().startsWith('auth='))
+    if (authCookie) {
+      const authValue = authCookie.split('=')[1]
+      return authValue === PASSWORD
+    }
+  }
+  return false
+}
+
+function getHtmlContent() {
+  return `
+  &lt;!DOCTYPE html&gt;
+  &lt;html lang="en"&gt;
+  &lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;Worker Control Panel&lt;/title&gt;
+    &lt;style&gt;
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        background-color: #f0f0f0;
+      }
+      .container {
+        text-align: center;
+        padding: 20px;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        max-width: 800px;
+        width: 100%;
+      }
+      input, button {
+        margin: 10px 0;
+        padding: 10px;
+        width: 200px;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+      }
+      button {
+        background-color: #4CAF50;
+        border: none;
+        color: white;
+        cursor: pointer;
+      }
+      #status {
+        margin-top: 20px;
+        font-weight: bold;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+      th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+      }
+      th {
+        background-color: #f2f2f2;
+      }
+      #loginForm, #dashboard {
+        display: none;
+      }
+    &lt;/style&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;div class="container"&gt;
+      &lt;h1&gt;Worker Control Panel&lt;/h1&gt;
+      &lt;div id="loginForm"&gt;
+        &lt;input type="password" id="password" placeholder="Enter password"&gt;
+        &lt;button onclick="login()"&gt;Login&lt;/button&gt;
+      &lt;/div&gt;
+      &lt;div id="dashboard"&gt;
+        &lt;button onclick="runScript()"&gt;Run Script&lt;/button&gt;
+        &lt;div id="status"&gt;&lt;/div&gt;
+        &lt;table id="resultsTable"&gt;
+          &lt;thead&gt;
+            &lt;tr&gt;
+              &lt;th&gt;Account&lt;/th&gt;
+              &lt;th&gt;Type&lt;/th&gt;
+              &lt;th&gt;Status&lt;/th&gt;
+              &lt;th&gt;Message&lt;/th&gt;
+              &lt;th&gt;Last Run&lt;/th&gt;
+            &lt;/tr&gt;
+          &lt;/thead&gt;
+          &lt;tbody&gt;&lt;/tbody&gt;
+        &lt;/table&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;script&gt;
+      let password = '';
+
+      function showLoginForm() {
+        document.getElementById('loginForm').style.display = 'block';
+        document.getElementById('dashboard').style.display = 'none';
+      }
+
+      function showDashboard() {
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        fetchResults();
+      }
+
+      async function checkAuth() {
+        const response = await fetch('/check-auth');
+        const data = await response.json();
+        if (data.authenticated) {
+          showDashboard();
+        } else {
+          showLoginForm();
+        }
+      }
+
+      async function login() {
+        password = document.getElementById('password').value;
+        const formData = new FormData();
+        formData.append('password', password);
+        const response = await fetch('/login', { 
+          method: 'POST',
+          body: formData
+        });
+        const result = await response.json();
+        if (result.success) {
+          showDashboard();
+        } else {
+          alert('Incorrect password');
+        }
+      }
+
+      async function runScript() {
+        const statusDiv = document.getElementById('status');
+        statusDiv.textContent = 'Executing script...';
+        try {
+          const response = await fetch('/run', { method: 'POST' });
+          if (response.ok) {
+            const results = await response.json();
+            displayResults(results);
+            statusDiv.textContent = 'Script executed successfully!';
+          } else if (response.status === 401) {
+            statusDiv.textContent = 'Unauthorized. Please login again.';
+            showLoginForm();
+          } else {
+            statusDiv.textContent = 'Error executing script.';
+          }
+        } catch (error) {
+          statusDiv.textContent = 'Error: ' + error.message;
+        }
+      }
+
+      async function fetchResults() {
+        try {
+          const response = await fetch('/results');
+          if (response.ok) {
+            const data = await response.json();
+            if (data.authenticated) {
+              displayResults(data.results);
+            } else {
+              showLoginForm();
+            }
+          } else {
+            console.error('Failed to fetch results');
+            showLoginForm();
+          }
+        } catch (error) {
+          console.error('Error fetching results:', error);
+          showLoginForm();
+        }
+      }
+
+      function displayResults(results) {
+        const tbody = document.querySelector('#resultsTable tbody');
+        tbody.innerHTML = '';
+        results.forEach(result =&gt; {
+          result.cronResults.forEach((cronResult, index) =&gt; {
+            const row = tbody.insertRow();
+            if (index === 0) {
+              row.insertCell(0).textContent = result.username;
+              row.insertCell(1).textContent = result.type;
+            } else {
+              row.insertCell(0).textContent = '';
+              row.insertCell(1).textContent = '';
+            }
+            row.insertCell(2).textContent = cronResult.success ? 'Success' : 'Failed';
+            row.insertCell(3).textContent = cronResult.message;
+            row.insertCell(4).textContent = new Date(result.lastRun).toLocaleString();
+          });
+        });
+      }
+
+      // 页面加载时检查认证状态
+      document.addEventListener('DOMContentLoaded', checkAuth);
+    &lt;/script&gt;
+  &lt;/body&gt;
+  &lt;/html&gt;
+  `;
+}
+
+async function handleScheduled(scheduledTime) {
+  const accountsData = JSON.parse(ACCOUNTS_JSON);
+  const accounts = accountsData.accounts;
+  
+  let results = [];
+  for (const account of accounts) {
+    const result = await loginAccount(account);
+    results.push(result);
+    await delay(Math.floor(Math.random() * 8000) + 1000);
+  }
+
+  // 保存结果到 KV 存储
+  await CRON_RESULTS.put('lastResults', JSON.stringify(results));
+}
+
+function generateRandomUserAgent() {
+  const browsers = ['Chrome', 'Firefox', 'Safari', 'Edge', 'Opera'];
+  const browser = browsers[Math.floor(Math.random() * browsers.length)];
+  const version = Math.floor(Math.random() * 100) + 1;
+  const os = ['Windows NT 10.0', 'Macintosh', 'X11'];
+  const selectedOS = os[Math.floor(Math.random() * os.length)];
+  const osVersion = selectedOS === 'X11' ? 'Linux x86_64' : selectedOS === 'Macintosh' ? 'Intel Mac OS X 10_15_7' : 'Win64; x64';
+
+  return `Mozilla/5.0 (${selectedOS}; ${osVersion}) AppleWebKit/537.36 (KHTML, like Gecko) ${browser}/${version}.0.0.0 Safari/537.36`;
+}
+
+async function loginAccount(account) {
+  const { username, password, panelnum, type, cronCommands } = account
+  let baseUrl = type === 'ct8' 
+    ? 'https://panel.ct8.pl' 
+    : `https://panel${panelnum}.serv00.com`
+  let loginUrl = `${baseUrl}/login/?next=/cron/`
+
+  const userAgent = generateRandomUserAgent();
+
+  try {
+    const response = await fetch(loginUrl, {
+      method: 'GET',
+      headers: {
+        'User-Agent': userAgent,
+      },
+    })
+
+    const pageContent = await response.text()
+    const csrfMatch = pageContent.match(/name="csrfmiddlewaretoken" value="([^"]*)"/)
+    const csrfToken = csrfMatch ? csrfMatch[1] : null
+
+    if (!csrfToken) {
+      throw new Error('CSRF token not found')
+    }
+
+    const initialCookies = response.headers.get('set-cookie') || ''
+
+    const formData = new URLSearchParams({
+      'username': username,
+      'password': password,
+      'csrfmiddlewaretoken': csrfToken,
+      'next': '/cron/'
+    })
+
+    const loginResponse = await fetch(loginUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Referer': loginUrl,
+        'User-Agent': userAgent,
+        'Cookie': initialCookies,
+      },
+      body: formData.toString(),
+      redirect: 'manual'
+    })
+
+    if (loginResponse.status === 302 &amp;&amp; loginResponse.headers.get('location') === '/cron/') {
+      const loginCookies = loginResponse.headers.get('set-cookie') || ''
+      const allCookies = combineCookies(initialCookies, loginCookies)
+
+      // 访问 cron 列表页面
+      const cronListUrl = `${baseUrl}/cron/`
+      const cronListResponse = await fetch(cronListUrl, {
+        headers: {
+          'Cookie': allCookies,
+          'User-Agent': userAgent,
+        }
+      })
+      const cronListContent = await cronListResponse.text()
+
+      console.log(`Cron list URL: ${cronListUrl}`)
+      console.log(`Cron list response status: ${cronListResponse.status}`)
+      console.log(`Cron list content (first 1000 chars): ${cronListContent.substring(0, 1000)}`)
+
+      let cronResults = [];
+      for (const cronCommand of cronCommands) {
+        if (!cronListContent.includes(cronCommand)) {
+          // 访问添加 cron 任务页面
+          const addCronUrl = `${baseUrl}/cron/add`
+          const addCronPageResponse = await fetch(addCronUrl, {
+            headers: {
+              'Cookie': allCookies,
+              'User-Agent': userAgent,
+              'Referer': cronListUrl,
+            }
+          })
+          const addCronPageContent = await addCronPageResponse.text()
+
+          console.log(`Add cron page URL: ${addCronUrl}`)
+          console.log(`Add cron page response status: ${addCronPageResponse.status}`)
+          console.log(`Add cron page content (first 1000 chars): ${addCronPageContent.substring(0, 1000)}`)
+
+          const newCsrfMatch = addCronPageContent.match(/name="csrfmiddlewaretoken" value="([^"]*)"/)
+          const newCsrfToken = newCsrfMatch ? newCsrfMatch[1] : null
+
+          if (!newCsrfToken) {
+            throw new Error('New CSRF token not found for adding cron task')
+          }
+
+          const formData = new URLSearchParams({
+            'csrfmiddlewaretoken': newCsrfToken,
+            'spec': 'manual',
+            'minute_time_interval': 'on',
+            'minute': '15',
+            'hour_time_interval': 'each',
+            'hour': '*',
+            'day_time_interval': 'each',
+            'day': '*',
+            'month_time_interval': 'each',
+            'month': '*',
+            'dow_time_interval': 'each',
+            'dow': '*',
+            'command': cronCommand,
+            'comment': 'Auto added cron job'
+          })
+
+          console.log('Form data being sent:', formData.toString())
+
+          const { success, response: addCronResponse, content: addCronResponseContent } = await addCronWithRetry(addCronUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'Cookie': allCookies,
+              'User-Agent': userAgent,
+              'Referer': addCronUrl,
+              'Origin': baseUrl,
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+              'Accept-Language': 'en-US,en;q=0.5',
+              'Upgrade-Insecure-Requests': '1'
+            },
+            body: formData.toString(),
+          })
+
+          console.log('Full response content:', addCronResponseContent)
+
+          if (success) {
+            if (addCronResponseContent.includes('Cron job has been added') || addCronResponseContent.includes('Zadanie cron zostało dodane')) {
+              const message = `添加了新的 cron 任务：${cronCommand}`;
+              console.log(message);
+              await sendTelegramMessage(`账号 ${username} (${type}) ${message}`);
+              cronResults.push({ success: true, message });
+            } else {
+              // 如果响应中没有成功信息，再次检查cron列表
+              const checkCronListResponse = await fetch(cronListUrl, {
+                headers: {
+                  'Cookie': allCookies,
+                  'User-Agent': userAgent,
+                }
+              });
+              const checkCronListContent = await checkCronListResponse.text();
+              
+              if (checkCronListContent.includes(cronCommand)) {
+                const message = `确认添加了新的 cron 任务：${cronCommand}`;
+                console.log(message);
+                await sendTelegramMessage(`账号 ${username} (${type}) ${message}`);
+                cronResults.push({ success: true, message });
+              } else {
+                const message = `尝试添加 cron 任务：${cronCommand}，但在列表中未找到。可能添加失败。`;
+                console.error(message);
+                cronResults.push({ success: false, message });
+              }
+            }
+          } else {
+            const message = `添加 cron 任务失败：${cronCommand}`;
+            console.error(message);
+            cronResults.push({ success: false, message });
+          }
+        } else {
+          const message = `cron 任务已存在：${cronCommand}`;
+          console.log(message);
+          cronResults.push({ success: true, message });
+        }
+      }
+      return { username, type, cronResults, lastRun: new Date().toISOString() };
+    } else {
+      const message = `登录失败，未知原因。请检查账号和密码是否正确。`;
+      console.error(message);
+      return { username, type, cronResults: [{ success: false, message }], lastRun: new Date().toISOString() };
+    }
+  } catch (error) {
+    const message = `登录或添加 cron 任务时出现错误: ${error.message}`;
+    console.error(message);
+    return { username, type, cronResults: [{ success: false, message }], lastRun: new Date().toISOString() };
+  }
+}
+
+async function addCronWithRetry(url, options, maxRetries = 3) {
+  for (let i = 0; i &lt; maxRetries; i++) {
+    try {
+      const response = await fetch(url, options);
+      const responseContent = await response.text();
+      console.log(`Attempt ${i + 1} response status:`, response.status);
+      console.log(`Attempt ${i + 1} response content (first 1000 chars):`, responseContent.substring(0, 1000));
+      
+      if (response.status === 200 || response.status === 302 || responseContent.includes('Cron job has been added') || responseContent.includes('Zadanie cron zostało dodane')) {
+        return { success: true, response, content: responseContent };
+      }
+    } catch (error) {
+      console.error(`Attempt ${i + 1} failed:`, error);
+    }
+    await delay(2000); // Wait 2 seconds before retrying
+  }
+  return { success: false };
+}
+
+function combineCookies(cookies1, cookies2) {
+  const cookieMap = new Map()
+  
+  const parseCookies = (cookieString) =&gt; {
+    cookieString.split(',').forEach(cookie =&gt; {
+      const [fullCookie] = cookie.trim().split(';')
+      const [name, value] = fullCookie.split('=')
+      if (name &amp;&amp; value) {
+        cookieMap.set(name.trim(), value.trim())
+      }
+    })
+  }
+
+  parseCookies(cookies1)
+  parseCookies(cookies2)
+
+  return Array.from(cookieMap.entries()).map(([name, value]) =&gt; `${name}=${value}`).join('; ')
+}
+
+async function sendTelegramMessage(message) {
+  const telegramConfig = JSON.parse(TELEGRAM_JSON)
+  const { telegramBotToken, telegramBotUserId } = telegramConfig
+  const url = `https://api.telegram.org/bot${telegramBotToken}/sendMessage`
+  
+  try {
+    await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: telegramBotUserId,
+        text: message
+      })
+    })
+  } catch (error) {
+    console.error('Error sending Telegram message:', error)
+  }
+}
+
+function delay(ms) {
+  return new Promise(resolve =&gt; setTimeout(resolve, ms))
+}
+</code></pre>
+<h3>二、创建变量</h3>
+<p><code class="notranslate">ACCOUNTS_JSON</code></p>
+<pre class="notranslate"><code class="notranslate">{
+  "accounts": [
+    {
+      "username": "user1",
+      "password": "password1",
+      "type": "ct8",
+      "cronCommands": [
+        "/usr/home/serv00name/domains",
+        "你的脚本"
+      ]
+    },
+    {
+      "username": "user2",
+      "password": "password2",
+      "panelnum": "2",
+      "type": "serv00",
+      "cronCommands": [
+        "/usr/home/serv00name"
+      ]
+    },
+    {
+      "username": "user3",
+      "password": "password3",
+      "type": "ct8",
+      "cronCommands": [
+        "/usr/home/serv00name",
+        "你的脚本",
+        "python /usr/home/serv00name/domains/backup.py"
+      ]
+    }
+  ]
+}
+</code></pre>
+<p><strong><a href="https://linux.do/t/topic/166344" rel="nofollow">cronCommands</a>这部分是你想要添加的cron任务，可以是路径，也可以是程序运行的命令(一个引号内是完整的执行命令)</strong></p>
+<p><code class="notranslate">TELEGRAM_JSON</code></p>
+<pre class="notranslate"><code class="notranslate">{
+  "telegramBotToken": "YOUR_BOT_TOKEN",
+  "telegramBotUserId": "YOUR_USER_ID"
+}
+</code></pre>
+<p><code class="notranslate">PASSWORD</code><br>
+你访问worker面板的密码</p>
+<h3>三、添加Cron</h3>
+<p>为了避免频繁登录执行脚本，建议各位佬友把时间填4-12h为宜<br>
+有佬友想：这么长时间执行一次我进程被杀的该如何是好 😉<br>
+<strong>后续在worker面板中解惑</strong></p>
+<h3>四、创建一个KV变量</h3>
+<p>创建一个名为CRON_RESULTS的KV变量</p>
+<p>回到刚才创建的worker界面绑定KV</p>
+<h3>五、绑定自定义域名</h3>
+<p>不绑也能运行成功</p>
+<hr>
+<p>现在已经大功告成了<br>
+访问你的worker网站并输入密码</p>
+<p>这个面板会记录你最后一次执行的命令结果，包括你手动执行或者是设置的定时Cron。</p>
+<p>当你部署在serv00的网站不能访问时，通过访问worker，点击一下运行脚本就能马上执行任务了，避免了频繁的使用cron启动脚本登录网站执行命令 😉</p>
+<p>电报只有当cron被干掉重新建立时才会通知（运行就消息推送会消息爆炸），这个可视化面板会记录输出的最后一次运行状态算是弥补了这部分</p></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://ic1123.github.io">Blog</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if("09/29/2024"!=""){
+    var startSite=new Date("09/29/2024");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","ic1123/ic1123.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
+
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
+
+</script>
+<script src='https://blog.meekdai.com/Gmeek/plugins/lightbox.js'></script><script src='https://blog.meekdai.com/Gmeek/plugins/articletoc.js'></script>
+
+</html>
