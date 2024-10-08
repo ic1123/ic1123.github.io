@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog</title><link>https://ic1123.github.io</link><description>仅作为个人学习输出</description><copyright>Blog</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://avatars.githubusercontent.com/u/89264167?u=2b839a9613f690b43f7f3fb63ba6b8e0d536f208&amp;v=4</url><title>avatar</title><link>https://ic1123.github.io</link></image><lastBuildDate>Sun, 06 Oct 2024 14:38:43 +0000</lastBuildDate><managingEditor>Blog</managingEditor><ttl>60</ttl><webMaster>Blog</webMaster><item><title>Serv00利用Cloudflare保活项目接入通知</title><link>https://ic1123.github.io/post/Serv00-li-yong-Cloudflare-bao-huo-xiang-mu-jie-ru-tong-zhi.html</link><description>&gt; [!NOTE]&#13;
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog</title><link>blog.kfcviwo50.us.kg</link><description>仅作为个人学习输出</description><copyright>Blog</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://avatars.githubusercontent.com/u/89264167?u=2b839a9613f690b43f7f3fb63ba6b8e0d536f208&amp;v=4</url><title>avatar</title><link>blog.kfcviwo50.us.kg</link></image><lastBuildDate>Tue, 08 Oct 2024 06:14:35 +0000</lastBuildDate><managingEditor>Blog</managingEditor><ttl>60</ttl><webMaster>Blog</webMaster><item><title>Serv00利用Cloudflare保活项目接入通知</title><link>blog.kfcviwo50.us.kg/post/Serv00-li-yong-Cloudflare-bao-huo-xiang-mu-jie-ru-tong-zhi.html</link><description>&gt; [!NOTE]&#13;
 &gt; 文章来源：[XJFKKK](https://linux.do/t/topic/181957)&#13;
 &#13;
 ### 一、创建worker&#13;
@@ -442,17 +442,17 @@ async function loginAccount(account) {&#13;
                 await sendTelegramMessage(`账号 ${username} (${type}) ${message}`);&#13;
                 cronResults.push({ success: true, message });&#13;
               } else {&#13;
-                const message = `尝试添加 cron 任务：${cronCommand}，但在列表中未找到。</description><guid isPermaLink="true">https://ic1123.github.io/post/Serv00-li-yong-Cloudflare-bao-huo-xiang-mu-jie-ru-tong-zhi.html</guid><pubDate>Sun, 06 Oct 2024 02:26:46 +0000</pubDate></item><item><title>Serv00利用Cloudflare保活-接入通知</title><link>https://ic1123.github.io/post/Serv00-li-yong-Cloudflare-bao-huo---jie-ru-tong-zhi.html</link><description>&gt; [!NOTE]&#13;
+                const message = `尝试添加 cron 任务：${cronCommand}，但在列表中未找到。</description><guid isPermaLink="true">blog.kfcviwo50.us.kg/post/Serv00-li-yong-Cloudflare-bao-huo-xiang-mu-jie-ru-tong-zhi.html</guid><pubDate>Sun, 06 Oct 2024 02:26:46 +0000</pubDate></item><item><title>Serv00利用Cloudflare保活-接入通知</title><link>blog.kfcviwo50.us.kg/post/Serv00-li-yong-Cloudflare-bao-huo---jie-ru-tong-zhi.html</link><description>&gt; [!NOTE]&#13;
 &gt; 文章来源：[XJFKKK](https://linux.do/t/topic/180293)&#13;
 &#13;
-现在在cloudflare worker中直接一个代码就解决了，然后在变量加入一个cron就行了。</description><guid isPermaLink="true">https://ic1123.github.io/post/Serv00-li-yong-Cloudflare-bao-huo---jie-ru-tong-zhi.html</guid><pubDate>Sun, 06 Oct 2024 02:17:03 +0000</pubDate></item><item><title>Serv00监控保活</title><link>https://ic1123.github.io/post/Serv00-jian-kong-bao-huo.html</link><description>&gt; [!NOTE]&#13;
+现在在cloudflare worker中直接一个代码就解决了，然后在变量加入一个cron就行了。</description><guid isPermaLink="true">blog.kfcviwo50.us.kg/post/Serv00-li-yong-Cloudflare-bao-huo---jie-ru-tong-zhi.html</guid><pubDate>Sun, 06 Oct 2024 02:17:03 +0000</pubDate></item><item><title>Serv00监控保活</title><link>blog.kfcviwo50.us.kg/post/Serv00-jian-kong-bao-huo.html</link><description>&gt; [!NOTE]&#13;
 &gt; 文章来源：[拾光](https://blog.mado.us.kg/)&#13;
 &#13;
 ### 1. 创建 Telegram Bot 并获取 Token&#13;
-首先，需要在 Telegram 上创建一个 Bot 并获取其 Token。</description><guid isPermaLink="true">https://ic1123.github.io/post/Serv00-jian-kong-bao-huo.html</guid><pubDate>Sat, 05 Oct 2024 01:26:18 +0000</pubDate></item><item><title>vps避免暴力扫描-Fail2ban安装</title><link>https://ic1123.github.io/post/vps-bi-mian-bao-li-sao-miao--Fail2ban-an-zhuang.html</link><description>&gt; [!NOTE]&#13;
+首先，需要在 Telegram 上创建一个 Bot 并获取其 Token。</description><guid isPermaLink="true">blog.kfcviwo50.us.kg/post/Serv00-jian-kong-bao-huo.html</guid><pubDate>Sat, 05 Oct 2024 01:26:18 +0000</pubDate></item><item><title>vps避免暴力扫描-Fail2ban安装</title><link>blog.kfcviwo50.us.kg/post/vps-bi-mian-bao-li-sao-miao--Fail2ban-an-zhuang.html</link><description>&gt; [!NOTE]&#13;
 &gt; 文章来源：[北京大学](https://its.pku.edu.cn/faq_fail2ban.jsp)&#13;
        &#13;
-对于校园网中近期发现的针对Linux系统的ssh暴力破解行为，可以通过安装fail2ban加强防护。</description><guid isPermaLink="true">https://ic1123.github.io/post/vps-bi-mian-bao-li-sao-miao--Fail2ban-an-zhuang.html</guid><pubDate>Sun, 29 Sep 2024 04:32:37 +0000</pubDate></item><item><title>Gmeek博客指南</title><link>https://ic1123.github.io/post/Gmeek-bo-ke-zhi-nan.html</link><description>### Gmeek作者博客&#13;
+对于校园网中近期发现的针对Linux系统的ssh暴力破解行为，可以通过安装fail2ban加强防护。</description><guid isPermaLink="true">blog.kfcviwo50.us.kg/post/vps-bi-mian-bao-li-sao-miao--Fail2ban-an-zhuang.html</guid><pubDate>Sun, 29 Sep 2024 04:32:37 +0000</pubDate></item><item><title>Gmeek博客指南</title><link>blog.kfcviwo50.us.kg/post/Gmeek-bo-ke-zhi-nan.html</link><description>### Gmeek作者博客&#13;
 [Gmeek作者博客](https://blog.meekdai.com)&#13;
 &#13;
 ### Mrakdown语法的实现案例：&#13;
@@ -462,4 +462,4 @@ async function loginAccount(account) {&#13;
 [CJW](https://blog.freeblock.cn/)        [拾光](https://blog.mado.us.kg/)&#13;
 ### 相关视频&#13;
 &#13;
-`Gmeek-html&lt;iframe src='//player.bilibili.com/player.html?isOutside=true&amp;aid=1305790042&amp;bvid=BV1GM4m1m7ZD&amp;cid=1588230883&amp;p=1&amp;autoplay=0' scrolling='no' border='0' frameborder='no' framespacing='0' allowfullscreen='true' width='100%' height='460px'&gt;&lt;/iframe&gt;`。</description><guid isPermaLink="true">https://ic1123.github.io/post/Gmeek-bo-ke-zhi-nan.html</guid><pubDate>Sun, 29 Sep 2024 02:14:29 +0000</pubDate></item></channel></rss>
+`Gmeek-html&lt;iframe src='//player.bilibili.com/player.html?isOutside=true&amp;aid=1305790042&amp;bvid=BV1GM4m1m7ZD&amp;cid=1588230883&amp;p=1&amp;autoplay=0' scrolling='no' border='0' frameborder='no' framespacing='0' allowfullscreen='true' width='100%' height='460px'&gt;&lt;/iframe&gt;`。</description><guid isPermaLink="true">blog.kfcviwo50.us.kg/post/Gmeek-bo-ke-zhi-nan.html</guid><pubDate>Sun, 29 Sep 2024 02:14:29 +0000</pubDate></item></channel></rss>
